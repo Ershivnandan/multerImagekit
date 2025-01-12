@@ -1,11 +1,13 @@
 import { User } from "../Model/user.model.js";
 import bcrypt from "bcryptjs";
+import uploadToIMagekit from "../Utils/uploadImagekit.js";
 
 export const SignupUser = async(req, res)=>{
     try {
         const {name, email, password} = req.body;
 
-        const avatar = req.file ? req.file.path : null;
+        // local file system setup check 
+        // const avatar = req.file ? req.file.path : null;
 
         const isExistingUser = await User.findOne({email});
 
@@ -15,7 +17,13 @@ export const SignupUser = async(req, res)=>{
 
         const hashedPass = await bcrypt.hash(password, 10);
 
-        const newUser = new User({name, email, password: hashedPass, avatar});
+        let fileUrl = null;
+
+        if(req.file){
+            fileUrl = await uploadToIMagekit(req.file);
+        }
+
+        const newUser = new User({name, email, password: hashedPass, avatar: fileUrl ? fileUrl : avatar});
         newUser.save();
         res.status(201).json({message: "User created successfully"});
     } catch (error) {
